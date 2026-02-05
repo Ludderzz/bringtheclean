@@ -19,7 +19,7 @@ export default function Booking() {
   // --- SERVICE DEFINITIONS ---
   const services = [
     { id: 'hc-std', cat: 'Home', name: "Standard Clean", price: 24, icon: <Home size={22}/>, type: 'hourly', min: 2 },
-    { id: 'hc-deep', cat: 'Home', name: "Deep Clean", price: 30, icon: <Sparkles size={22}/>, type: 'hourly', min: 3 },
+    { id: 'hc-deep', cat: 'Home', name: "Deep Clean", price: 30, icon: <Sparkles size={22}/>, type: 'hourly', min: 3 }, // Updated min to 3
     { id: 'hc-ten', cat: 'Home', name: "End-of-Tenancy", price: 180, icon: <CheckCircle2 size={22}/>, type: 'tiered' },
     { id: 'gd-lawn', cat: 'Garden', name: "Lawn & Edging", price: 28, icon: <Leaf size={22}/>, type: 'hourly', min: 2 },
     { id: 'gd-hdg', cat: 'Garden', name: "Hedge Trimming", price: 35, icon: <Scissors size={22}/>, type: 'hourly', min: 2 },
@@ -59,7 +59,13 @@ export default function Booking() {
     const exists = selectedServices.find(s => s.id === service.id);
     if (exists) setSelectedServices(selectedServices.filter(s => s.id !== service.id));
     else {
-      setSelectedServices([...selectedServices, { ...service, frequency: 'One-off', hours: service.type === 'fixed' ? 8 : 2, rooms: 1 }]);
+      // Logic: Default hours to the service minimum (3 for Deep Clean, 2 for others)
+      setSelectedServices([...selectedServices, { 
+        ...service, 
+        frequency: 'One-off', 
+        hours: service.type === 'fixed' ? 8 : (service.min || 2), 
+        rooms: 1 
+      }]);
     }
   };
 
@@ -145,7 +151,16 @@ export default function Booking() {
                                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Timer size={16}/> Duration</label>
                                   <span className="text-2xl font-black text-emerald-500">{s.hours} Hours</span>
                                 </div>
-                                <input type="range" min="2" max="10" value={s.hours} onChange={(e) => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, hours: parseInt(e.target.value)} : item))} className="w-full h-3 bg-slate-100 rounded-lg appearance-none accent-emerald-500 cursor-pointer" />
+                                {/* Slider floor is now dynamic (s.min) */}
+                                <input 
+                                  type="range" 
+                                  min={s.min || 2} 
+                                  max="10" 
+                                  value={s.hours} 
+                                  onChange={(e) => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, hours: parseInt(e.target.value)} : item))} 
+                                  className="w-full h-3 bg-slate-100 rounded-lg appearance-none accent-emerald-500 cursor-pointer" 
+                                />
+                                {s.id === 'hc-deep' && <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest italic">* 3-hour minimum for Deep Cleans</p>}
                               </div>
                               <div className="space-y-6">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><RefreshCw size={16}/> Frequency</label>

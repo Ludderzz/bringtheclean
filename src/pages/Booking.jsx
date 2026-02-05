@@ -19,7 +19,7 @@ export default function Booking() {
   // --- SERVICE DEFINITIONS ---
   const services = [
     { id: 'hc-std', cat: 'Home', name: "Standard Clean", price: 24, icon: <Home size={22}/>, type: 'hourly', min: 2 },
-    { id: 'hc-deep', cat: 'Home', name: "Deep Clean", price: 30, icon: <Sparkles size={22}/>, type: 'hourly', min: 2 },
+    { id: 'hc-deep', cat: 'Home', name: "Deep Clean", price: 30, icon: <Sparkles size={22}/>, type: 'hourly', min: 3 },
     { id: 'hc-ten', cat: 'Home', name: "End-of-Tenancy", price: 180, icon: <CheckCircle2 size={22}/>, type: 'tiered' },
     { id: 'gd-lawn', cat: 'Garden', name: "Lawn & Edging", price: 28, icon: <Leaf size={22}/>, type: 'hourly', min: 2 },
     { id: 'gd-hdg', cat: 'Garden', name: "Hedge Trimming", price: 35, icon: <Scissors size={22}/>, type: 'hourly', min: 2 },

@@ -40,10 +40,27 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="max-w-xl text-lg text-slate-500 mb-10"
+            className="max-w-xl text-lg text-slate-500 mb-6"
           >
             The premium standard for modern homes. COSHH certified cleaners specializing in high-end domestic and garden maintenance.
           </motion.p>
+
+          {/* Fair Pay Manifesto - Small but readable */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="max-w-2xl mb-10 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm"
+          >
+            <p className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
+              <ShieldCheck size={14} className="text-btcGreen" /> Fair Pricing, Fair Pay
+            </p>
+            <p className="text-[13px] leading-relaxed text-slate-500">
+              We believe great cleans come from cleaners who are valued and paid properly. 
+              That’s why we guarantee a minimum of <span className="font-bold text-slate-900">£15 per hour</span> to our cleaners. 
+              Our prices may be slightly higher than some agencies, but it ensures <span className="font-bold text-slate-900">reliable, motivated cleaners</span> and consistently high standards.
+            </p>
+          </motion.div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to="/booking" className="bg-btcDark text-white px-8 py-4 rounded-2xl font-bold hover:scale-105 transition-all shadow-xl flex items-center gap-2">

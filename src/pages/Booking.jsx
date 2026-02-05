@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Calendar, MapPin, Sparkles, CheckCircle2, ArrowRight, ArrowLeft, 
-  Clock, RefreshCw, Plus, Trash2, Leaf, Home, Fuel, Scissors,
-  Timer, Zap, Search, User, Mail, Dog, ShieldCheck, Phone
+  Calendar, MapPin, Sparkles, CheckCircle2, ArrowRight, 
+  Clock, RefreshCw, Trash2, Leaf, Home, Scissors,
+  Timer, Zap, ShieldCheck, BedDouble, Phone, User, Mail, TreePine
 } from 'lucide-react';
 
 export default function Booking() {
@@ -16,17 +16,18 @@ export default function Booking() {
   
   const [postcodeStatus, setPostcodeStatus] = useState({ fee: 0, label: 'Not Entered', color: 'text-slate-300', valid: null });
 
-  // --- THE FULL 6 SERVICES ---
+  // --- SERVICE DEFINITIONS ---
   const services = [
-    { id: 'hc-std', cat: 'Home', name: "Standard Clean", price: 28, icon: <Home size={22}/>, type: 'hourly' },
-    { id: 'hc-deep', cat: 'Home', name: "Deep Clean", price: 45, icon: <Sparkles size={22}/>, type: 'hourly' },
-    { id: 'hc-ten', cat: 'Home', name: "End-of-Tenancy", price: 120, icon: <CheckCircle2 size={22}/>, type: 'fixed' },
-    { id: 'gd-lawn', cat: 'Garden', name: "Lawn & Edging", price: 28, icon: <Leaf size={22}/>, type: 'hourly' },
-    { id: 'gd-hdg', cat: 'Garden', name: "Hedge Trimming", price: 35, icon: <Scissors size={22}/>, type: 'hourly' },
-    { id: 'gd-full', cat: 'Garden', name: "Full Day Garden", price: 250, icon: <Zap size={22}/>, type: 'fixed' },
+    { id: 'hc-std', cat: 'Home', name: "Standard Clean", price: 24, icon: <Home size={22}/>, type: 'hourly', min: 2 },
+    { id: 'hc-deep', cat: 'Home', name: "Deep Clean", price: 30, icon: <Sparkles size={22}/>, type: 'hourly', min: 2 },
+    { id: 'hc-ten', cat: 'Home', name: "End-of-Tenancy", price: 180, icon: <CheckCircle2 size={22}/>, type: 'tiered' },
+    { id: 'gd-lawn', cat: 'Garden', name: "Lawn & Edging", price: 28, icon: <Leaf size={22}/>, type: 'hourly', min: 2 },
+    { id: 'gd-hdg', cat: 'Garden', name: "Hedge Trimming", price: 35, icon: <Scissors size={22}/>, type: 'hourly', min: 2 },
+    { id: 'gd-full', cat: 'Garden', name: "Full Day Garden Job", price: 250, icon: <TreePine size={22}/>, type: 'fixed' },
   ];
 
-  // --- Postcode Logic ---
+  const EOT_PRICING = { 1: 190, 2: 240, 3: 290, 4: 360, 5: 440, 6: 520 };
+
   const handlePostcodeLogic = (val) => {
     const pc = val.toLowerCase().trim();
     setFormData(prev => ({ ...prev, postcode: val }));
@@ -43,25 +44,29 @@ export default function Booking() {
     else if (pc.length >= 3) setPostcodeStatus({ fee: 0, label: 'Out of Area', color: 'text-blue-500', valid: false });
   };
 
-  // --- Calculations ---
   const totalCost = useMemo(() => {
-    const sCost = selectedServices.reduce((sum, s) => sum + (s.type === 'hourly' ? s.price * s.hours : s.price), 0);
+    const sCost = selectedServices.reduce((sum, s) => {
+      if (s.type === 'hourly') return sum + (s.price * s.hours);
+      if (s.type === 'tiered') return sum + EOT_PRICING[s.rooms || 1];
+      if (s.type === 'fixed') return sum + s.price;
+      return sum + s.price;
+    }, 0);
     const fuel = (postcodeStatus.valid && postcodeStatus.fee) ? postcodeStatus.fee : 0;
-    const priorityFee = formData.isPriority ? 15 : 0;
-    return sCost + fuel + priorityFee;
-  }, [selectedServices, postcodeStatus, formData.isPriority]);
+    return sCost + fuel;
+  }, [selectedServices, postcodeStatus]);
 
   const toggleService = (service) => {
     const exists = selectedServices.find(s => s.id === service.id);
     if (exists) setSelectedServices(selectedServices.filter(s => s.id !== service.id));
-    else setSelectedServices([...selectedServices, { ...service, frequency: 'One-off', hours: 2 }]);
+    else {
+      setSelectedServices([...selectedServices, { ...service, frequency: 'One-off', hours: service.type === 'fixed' ? 8 : 2, rooms: 1 }]);
+    }
   };
 
   return (
     <div className="pt-32 pb-24 px-6 min-h-screen bg-slate-50">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8 items-start">
         
-        {/* LEFT COLUMN: Steps */}
         <div className="lg:col-span-8 space-y-8">
           <AnimatePresence mode="wait">
             {step === 1 ? (
@@ -70,7 +75,7 @@ export default function Booking() {
                 {/* 1. Location Gate */}
                 <div className="bg-slate-900 text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
                   <div className="absolute right-0 top-0 opacity-10"><MapPin size={120} /></div>
-                  <h3 className="text-2xl font-black mb-6 italic tracking-tighter">1. Where are we working?</h3>
+                  <h3 className="text-2xl font-black mb-6 italic tracking-tighter text-white">1. Where are we working?</h3>
                   <div className="flex flex-col md:flex-row gap-4 relative z-10">
                     <input 
                       type="text" value={formData.postcode} placeholder="Enter Postcode (e.g. BS21)" 
@@ -85,7 +90,7 @@ export default function Booking() {
                   </div>
                 </div>
 
-                {/* 2. Service Selection Grid */}
+                {/* 2. Service Selection */}
                 {postcodeStatus.valid !== false && (
                   <div className="space-y-8">
                     <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm">
@@ -95,66 +100,65 @@ export default function Booking() {
                           const isActive = selectedServices.find(item => item.id === s.id);
                           return (
                             <button 
-                              key={s.id} 
-                              onClick={() => toggleService(s)} 
-                              className={`p-8 rounded-[2.5rem] text-left border-2 transition-all group relative ${
-                                isActive 
-                                ? 'border-emerald-500 bg-emerald-50 shadow-emerald-500/10 shadow-xl' 
-                                : 'border-slate-100 bg-white hover:border-slate-300'
-                              }`}
+                              key={s.id} onClick={() => toggleService(s)} 
+                              className={`p-8 rounded-[2.5rem] text-left border-2 transition-all group relative ${isActive ? 'border-emerald-500 bg-emerald-50 shadow-xl' : 'border-slate-100 bg-white hover:border-slate-300'}`}
                             >
                               <div className="flex items-start justify-between mb-6">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                                   {s.icon}
                                 </div>
                                 {isActive && <CheckCircle2 className="text-emerald-500" size={28} />}
                               </div>
-                              <div>
-                                <h4 className={`text-xl font-black uppercase tracking-tighter mb-1 ${isActive ? 'text-emerald-600' : 'text-slate-900'}`}>
-                                  {s.name}
-                                </h4>
-                                <p className={`text-xs font-black uppercase tracking-[0.2em] ${isActive ? 'text-emerald-500/70' : 'text-slate-400'}`}>
-                                  £{s.price}{s.type === 'hourly' ? '/hr' : ' Fixed Session'}
-                                </p>
-                              </div>
+                              <h4 className={`text-xl font-black uppercase tracking-tighter mb-1 ${isActive ? 'text-emerald-600' : 'text-slate-900'}`}>{s.name}</h4>
+                              <p className={`text-xs font-black uppercase tracking-[0.2em] ${isActive ? 'text-emerald-500/70' : 'text-slate-400'}`}>
+                                {s.type === 'tiered' ? 'Fixed Price' : s.type === 'fixed' ? 'Full Day Rate' : `£${s.price}/hr`}
+                              </p>
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
-                    {/* Configurators */}
                     {selectedServices.map((s) => (
-                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} key={s.id} className="bg-white p-10 rounded-[3rem] border-2 border-emerald-500/20 shadow-xl space-y-8 relative">
-                        <div className="flex justify-between items-center">
-                          <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900">Configure {s.name}</h3>
-                          <button onClick={() => toggleService(s)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={24}/></button>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-12">
-                          {s.type === 'hourly' ? (
+                      s.type !== 'fixed' && (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} key={s.id} className="bg-white p-10 rounded-[3rem] border-2 border-emerald-500/20 shadow-xl space-y-8 relative">
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900">Configure {s.name}</h3>
+                            <button onClick={() => toggleService(s)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={24}/></button>
+                          </div>
+                          {s.type === 'tiered' ? (
                             <div className="space-y-6">
-                              <div className="flex justify-between items-end">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Timer size={16}/> Duration</label>
-                                <span className="text-2xl font-black text-emerald-500">{s.hours} Hours</span>
+                               <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BedDouble size={16}/> Select Property Size</label>
+                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-[2rem]">
+                                {[1, 2, 3, 4, 5, 6].map(num => (
+                                  <button key={num} onClick={() => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, rooms: num} : item))} 
+                                    className={`py-5 rounded-2xl text-xs font-black uppercase transition-all border-2 ${s.rooms === num ? 'bg-white border-emerald-500 text-emerald-600 shadow-md' : 'bg-white/50 border-transparent text-slate-400 hover:border-slate-200'}`}>
+                                    {num} Bed {num === 1 ? 'Flat' : 'House'}
+                                  </button>
+                                ))}
                               </div>
-                              <input type="range" min="1" max="8" value={s.hours} onChange={(e) => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, hours: parseInt(e.target.value)} : item))} className="w-full h-3 bg-slate-100 rounded-lg appearance-none accent-emerald-500 cursor-pointer" />
                             </div>
                           ) : (
-                            <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex items-center gap-4">
-                               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm"><Zap size={24} /></div>
-                               <div><p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Fixed Rate Plan</p><p className="text-sm font-bold text-emerald-900 leading-tight">Professional {s.name} Completion</p></div>
+                            <div className="grid md:grid-cols-2 gap-12">
+                              <div className="space-y-6">
+                                <div className="flex justify-between items-end">
+                                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Timer size={16}/> Duration</label>
+                                  <span className="text-2xl font-black text-emerald-500">{s.hours} Hours</span>
+                                </div>
+                                <input type="range" min="2" max="10" value={s.hours} onChange={(e) => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, hours: parseInt(e.target.value)} : item))} className="w-full h-3 bg-slate-100 rounded-lg appearance-none accent-emerald-500 cursor-pointer" />
+                              </div>
+                              <div className="space-y-6">
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><RefreshCw size={16}/> Frequency</label>
+                                <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+                                  {['One-off', 'Weekly', 'Bi-Weekly'].map(f => (
+                                    <button key={f} onClick={() => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, frequency: f} : item))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${s.frequency === f ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-400'}`}>{f}</button>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           )}
-                          <div className="space-y-6">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><RefreshCw size={16}/> Frequency</label>
-                            <div className="flex bg-slate-100 p-1.5 rounded-2xl">
-                              {['One-off', 'Weekly', 'Bi-Weekly', 'Monthly'].map(f => (
-                                <button key={f} onClick={() => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, frequency: f} : item))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${s.frequency === f ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-400'}`}>{f}</button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
+                        </motion.div>
+                      )
                     ))}
 
                     {selectedServices.length > 0 && (
@@ -166,64 +170,73 @@ export default function Booking() {
                 )}
               </motion.div>
             ) : (
-              /* --- UPDATED STEP 3: FINAL DETAILS --- */
-              <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-8">
-                <div className="space-y-2 text-center md:text-left">
+              <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white p-8 md:p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-8">
+                <div className="space-y-2">
                   <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic">3. Final Details</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact & Property Information</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Please provide your information for the appointment.</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">First Name</label>
-                    <input type="text" placeholder="John" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">First Name</label>
+                    <input type="text" placeholder="John" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Last Name</label>
-                    <input type="text" placeholder="Smith" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Last Name</label>
+                    <input type="text" placeholder="Smith" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Contact Number</label>
-                    <input type="tel" placeholder="07123 456789" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                      <input type="tel" placeholder="07123 456789" className="w-full pl-14 pr-5 py-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Email Address</label>
-                    <input type="email" placeholder="john@example.com" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                      <input type="email" placeholder="john@example.com" className="w-full pl-14 pr-5 py-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Property Address</label>
-                    <input type="text" placeholder="123 Clevedon Road" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Street Address</label>
+                    <input type="text" placeholder="123 Clevedon Road" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Postcode</label>
-                    <input type="text" value={formData.postcode} readOnly className="w-full p-5 rounded-2xl bg-slate-100 border-none font-black text-slate-400 cursor-not-allowed uppercase" />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Postcode</label>
+                    <input 
+                      type="text" 
+                      placeholder="BS21" 
+                      className={`w-full p-5 rounded-2xl bg-slate-50 border-2 transition-all font-bold outline-none uppercase ${postcodeStatus.valid === false ? 'border-red-500 text-red-600' : 'border-transparent focus:border-emerald-500'}`} 
+                      value={formData.postcode} 
+                      onChange={(e) => handlePostcodeLogic(e.target.value)} 
+                    />
                   </div>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <button onClick={() => setFormData({...formData, isPriority: !formData.isPriority})} className={`flex items-center justify-between w-full p-6 rounded-2xl border-2 transition-all font-black text-xs uppercase tracking-widest ${formData.isPriority ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-slate-200'}`}>
-                     <div className="flex items-center gap-3"><Zap size={18} /> Priority Booking Required</div>
-                     <span>+£15.00</span>
-                  </button>
-                  <textarea placeholder="Any specific tasks or instructions for the team?" className="w-full p-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold h-32 outline-none" onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-slate-100">
                   <button onClick={() => setStep(1)} className="flex-1 py-6 rounded-2xl font-black bg-slate-100 text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-colors">Back</button>
-                  <button onClick={() => alert('Booking Request Sent!')} className="flex-[2] py-6 rounded-2xl font-black bg-slate-900 text-white shadow-xl uppercase text-[10px] tracking-widest hover:bg-emerald-600 transition-all">Request Appointment</button>
+                  <button 
+                    disabled={postcodeStatus.valid === false}
+                    onClick={() => alert('Booking Request Sent!')} 
+                    className={`flex-[2] py-6 rounded-2xl font-black text-white shadow-xl uppercase text-[10px] tracking-widest transition-all ${postcodeStatus.valid === false ? 'bg-slate-300 cursor-not-allowed opacity-50' : 'bg-slate-900 hover:bg-emerald-600'}`}
+                  >
+                    {postcodeStatus.valid === false ? 'Area Not Covered' : 'Request Appointment'}
+                  </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* RIGHT COLUMN: Sidebar Summary */}
+        {/* SIDEBAR SUMMARY */}
         <div className="lg:col-span-4 sticky top-28">
           <div className="bg-white p-10 rounded-[3.5rem] border border-slate-200 shadow-2xl space-y-8">
             <h3 className="font-black text-2xl text-center border-b border-slate-50 pb-6 text-slate-900 tracking-tighter italic">Your Plan Summary</h3>
@@ -233,10 +246,12 @@ export default function Booking() {
                   {selectedServices.map(s => (
                     <div key={s.id} className="flex justify-between items-start">
                       <div>
-                        <p className="font-black text-slate-900 uppercase tracking-tighter leading-none">{s.name}</p>
-                        <p className="text-[10px] text-slate-400 font-black uppercase mt-2 tracking-widest">{s.frequency} • {s.type === 'hourly' ? `${s.hours}hrs` : 'Fixed'}</p>
+                        <p className="font-black text-slate-900 uppercase tracking-tighter leading-none text-xs">{s.name}</p>
+                        <p className="text-[9px] text-slate-400 font-black uppercase mt-2 tracking-widest">
+                          {s.type === 'tiered' ? `${s.rooms} Bedroom` : s.type === 'fixed' ? 'Full Day • 8hrs' : `${s.frequency} • ${s.hours}hrs`}
+                        </p>
                       </div>
-                      <span className="font-black text-slate-900 text-lg">£{s.type === 'hourly' ? s.price * s.hours : s.price}</span>
+                      <span className="font-black text-slate-900 text-sm">£{s.type === 'hourly' ? s.price * s.hours : s.type === 'tiered' ? EOT_PRICING[s.rooms] : s.price}</span>
                     </div>
                   ))}
                 </div>
@@ -245,12 +260,10 @@ export default function Booking() {
                      <span>Fuel & Zone</span>
                      <span className={postcodeStatus.color}>{postcodeStatus.fee === 0 ? 'Free' : `+£${postcodeStatus.fee}`}</span>
                    </div>
-                   {formData.isPriority && <div className="flex justify-between text-[10px] font-black uppercase text-orange-600"><span>Priority Surcharge</span><span>+£15.00</span></div>}
                 </div>
                 <div className="pt-8 border-t border-slate-100 text-center">
                   <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Estimated Total</p>
                   <p className="text-7xl font-black text-slate-900 tracking-tighter">£{totalCost}</p>
-                  <div className="bg-emerald-500 text-white py-3 px-8 rounded-full text-[10px] font-black uppercase tracking-widest inline-block mt-8 shadow-lg">Professional Visit</div>
                 </div>
               </div>
             ) : (

@@ -3,15 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, MapPin, Sparkles, CheckCircle2, ArrowRight, ArrowLeft, 
   Clock, RefreshCw, Plus, Trash2, Leaf, Home, Fuel, Scissors,
-  Timer, Zap, Search, User, Mail, Dog, ShieldCheck
+  Timer, Zap, Search, User, Mail, Dog, ShieldCheck, Phone
 } from 'lucide-react';
 
 export default function Booking() {
   const [step, setStep] = useState(1);
   const [selectedServices, setSelectedServices] = useState([]);
   const [formData, setFormData] = useState({ 
-    firstName: '', lastName: '', email: '', address: '', postcode: '', date: '', 
-    hasPets: false, isPriority: false, notes: '' 
+    firstName: '', lastName: '', email: '', phone: '', address: '', postcode: '', 
+    date: '', hasPets: false, isPriority: false, notes: '' 
   });
   
   const [postcodeStatus, setPostcodeStatus] = useState({ fee: 0, label: 'Not Entered', color: 'text-slate-300', valid: null });
@@ -26,6 +26,7 @@ export default function Booking() {
     { id: 'gd-full', cat: 'Garden', name: "Full Day Garden", price: 250, icon: <Zap size={22}/>, type: 'fixed' },
   ];
 
+  // --- Postcode Logic ---
   const handlePostcodeLogic = (val) => {
     const pc = val.toLowerCase().trim();
     setFormData(prev => ({ ...prev, postcode: val }));
@@ -42,6 +43,7 @@ export default function Booking() {
     else if (pc.length >= 3) setPostcodeStatus({ fee: 0, label: 'Out of Area', color: 'text-blue-500', valid: false });
   };
 
+  // --- Calculations ---
   const totalCost = useMemo(() => {
     const sCost = selectedServices.reduce((sum, s) => sum + (s.type === 'hourly' ? s.price * s.hours : s.price), 0);
     const fuel = (postcodeStatus.valid && postcodeStatus.fee) ? postcodeStatus.fee : 0;
@@ -59,7 +61,7 @@ export default function Booking() {
     <div className="pt-32 pb-24 px-6 min-h-screen bg-slate-50">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8 items-start">
         
-        {/* LEFT COLUMN */}
+        {/* LEFT COLUMN: Steps */}
         <div className="lg:col-span-8 space-y-8">
           <AnimatePresence mode="wait">
             {step === 1 ? (
@@ -83,7 +85,7 @@ export default function Booking() {
                   </div>
                 </div>
 
-                {/* 2. Service Selection Grid - NOW 2 PER LINE */}
+                {/* 2. Service Selection Grid */}
                 {postcodeStatus.valid !== false && (
                   <div className="space-y-8">
                     <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm">
@@ -107,7 +109,6 @@ export default function Booking() {
                                 </div>
                                 {isActive && <CheckCircle2 className="text-emerald-500" size={28} />}
                               </div>
-                              
                               <div>
                                 <h4 className={`text-xl font-black uppercase tracking-tighter mb-1 ${isActive ? 'text-emerald-600' : 'text-slate-900'}`}>
                                   {s.name}
@@ -122,22 +123,13 @@ export default function Booking() {
                       </div>
                     </div>
 
-                    {/* Individual Configuration Cards */}
+                    {/* Configurators */}
                     {selectedServices.map((s) => (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }} 
-                        animate={{ opacity: 1, scale: 1 }}
-                        key={s.id} 
-                        className="bg-white p-10 rounded-[3rem] border-2 border-emerald-500/20 shadow-xl space-y-8 relative"
-                      >
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} key={s.id} className="bg-white p-10 rounded-[3rem] border-2 border-emerald-500/20 shadow-xl space-y-8 relative">
                         <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                            <span className="w-2 h-8 bg-emerald-500 rounded-full" />
-                            <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900">Configure {s.name}</h3>
-                          </div>
-                          <button onClick={() => toggleService(s)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={24}/></button>
+                          <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-900">Configure {s.name}</h3>
+                          <button onClick={() => toggleService(s)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={24}/></button>
                         </div>
-
                         <div className="grid md:grid-cols-2 gap-12">
                           {s.type === 'hourly' ? (
                             <div className="space-y-6">
@@ -150,15 +142,14 @@ export default function Booking() {
                           ) : (
                             <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex items-center gap-4">
                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm"><Zap size={24} /></div>
-                               <div><p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Fixed Rate Plan</p><p className="text-sm font-bold text-emerald-900">Professional {s.name} Completion</p></div>
+                               <div><p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Fixed Rate Plan</p><p className="text-sm font-bold text-emerald-900 leading-tight">Professional {s.name} Completion</p></div>
                             </div>
                           )}
-
                           <div className="space-y-6">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><RefreshCw size={16}/> Visit Frequency</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><RefreshCw size={16}/> Frequency</label>
                             <div className="flex bg-slate-100 p-1.5 rounded-2xl">
                               {['One-off', 'Weekly', 'Bi-Weekly', 'Monthly'].map(f => (
-                                <button key={f} onClick={() => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, frequency: f} : item))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${s.frequency === f ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>{f}</button>
+                                <button key={f} onClick={() => setSelectedServices(selectedServices.map(item => item.id === s.id ? {...item, frequency: f} : item))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${s.frequency === f ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-400'}`}>{f}</button>
                               ))}
                             </div>
                           </div>
@@ -168,30 +159,71 @@ export default function Booking() {
 
                     {selectedServices.length > 0 && (
                       <button onClick={() => setStep(2)} className="w-full py-8 rounded-[2.5rem] font-black bg-slate-900 text-white flex items-center justify-center gap-4 shadow-2xl hover:bg-emerald-600 transition-all text-lg group">
-                        Next: Finalize Details <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+                        Next: Contact Details <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
                       </button>
                     )}
                   </div>
                 )}
               </motion.div>
             ) : (
-              /* Step 2 remains the same... */
-              <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-10">
-                 <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic">3. Final Details</h2>
-                 <div className="grid md:grid-cols-2 gap-8">
-                    <input type="text" placeholder="Your Name" className="w-full p-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" />
-                    <input type="text" placeholder="Best Contact Number" className="w-full p-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" />
-                 </div>
-                 <div className="flex gap-4">
-                    <button onClick={() => setStep(1)} className="px-10 py-6 rounded-2xl font-black bg-slate-100 text-slate-400 uppercase text-xs tracking-widest">Back</button>
-                    <button onClick={() => alert('Sent!')} className="flex-1 py-6 rounded-2xl font-black bg-slate-900 text-white shadow-xl uppercase text-xs tracking-widest">Request My Booking</button>
-                 </div>
+              /* --- UPDATED STEP 3: FINAL DETAILS --- */
+              <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-8">
+                <div className="space-y-2 text-center md:text-left">
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic">3. Final Details</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact & Property Information</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">First Name</label>
+                    <input type="text" placeholder="John" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Last Name</label>
+                    <input type="text" placeholder="Smith" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Contact Number</label>
+                    <input type="tel" placeholder="07123 456789" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Email Address</label>
+                    <input type="email" placeholder="john@example.com" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Property Address</label>
+                    <input type="text" placeholder="123 Clevedon Road" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold outline-none" onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Postcode</label>
+                    <input type="text" value={formData.postcode} readOnly className="w-full p-5 rounded-2xl bg-slate-100 border-none font-black text-slate-400 cursor-not-allowed uppercase" />
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4">
+                  <button onClick={() => setFormData({...formData, isPriority: !formData.isPriority})} className={`flex items-center justify-between w-full p-6 rounded-2xl border-2 transition-all font-black text-xs uppercase tracking-widest ${formData.isPriority ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-100 text-slate-400 hover:border-slate-200'}`}>
+                     <div className="flex items-center gap-3"><Zap size={18} /> Priority Booking Required</div>
+                     <span>+£15.00</span>
+                  </button>
+                  <textarea placeholder="Any specific tasks or instructions for the team?" className="w-full p-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white transition-all font-bold h-32 outline-none" onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-slate-100">
+                  <button onClick={() => setStep(1)} className="flex-1 py-6 rounded-2xl font-black bg-slate-100 text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-colors">Back</button>
+                  <button onClick={() => alert('Booking Request Sent!')} className="flex-[2] py-6 rounded-2xl font-black bg-slate-900 text-white shadow-xl uppercase text-[10px] tracking-widest hover:bg-emerald-600 transition-all">Request Appointment</button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* SIDEBAR SUMMARY */}
+        {/* RIGHT COLUMN: Sidebar Summary */}
         <div className="lg:col-span-4 sticky top-28">
           <div className="bg-white p-10 rounded-[3.5rem] border border-slate-200 shadow-2xl space-y-8">
             <h3 className="font-black text-2xl text-center border-b border-slate-50 pb-6 text-slate-900 tracking-tighter italic">Your Plan Summary</h3>
@@ -213,15 +245,16 @@ export default function Booking() {
                      <span>Fuel & Zone</span>
                      <span className={postcodeStatus.color}>{postcodeStatus.fee === 0 ? 'Free' : `+£${postcodeStatus.fee}`}</span>
                    </div>
+                   {formData.isPriority && <div className="flex justify-between text-[10px] font-black uppercase text-orange-600"><span>Priority Surcharge</span><span>+£15.00</span></div>}
                 </div>
                 <div className="pt-8 border-t border-slate-100 text-center">
                   <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Estimated Total</p>
                   <p className="text-7xl font-black text-slate-900 tracking-tighter">£{totalCost}</p>
-                  <div className="bg-emerald-500 text-white py-3 px-8 rounded-full text-[10px] font-black uppercase tracking-widest inline-block mt-8 shadow-lg shadow-emerald-500/20">Secure Booking</div>
+                  <div className="bg-emerald-500 text-white py-3 px-8 rounded-full text-[10px] font-black uppercase tracking-widest inline-block mt-8 shadow-lg">Professional Visit</div>
                 </div>
               </div>
             ) : (
-              <div className="py-24 text-center text-slate-200 italic font-black uppercase tracking-widest">Select Services Above</div>
+              <div className="py-24 text-center text-slate-200 italic font-black uppercase tracking-widest leading-tight">Build your plan <br/> on the left</div>
             )}
           </div>
         </div>
